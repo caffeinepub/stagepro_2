@@ -1,0 +1,116 @@
+// Version: 1.0.0
+type AiGenerationLog__629033411 =
+  {
+    createdAt : Time__900049286;
+    id : Nat;
+    inputImageBlobId : Text;
+    outputImageBlobId : Text;
+    prompt : Text;
+    userPrincipal : Principal
+  };
+type CustomTheme__406296023 =
+  {
+    createdAt : Time__900049286;
+    name : Text;
+    principal : Principal;
+    prompt : Text
+  };
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type DesignEntry__935033953 =
+  {
+    createdAt : Time__900049286;
+    principal : Principal;
+    roomType : Text;
+    style : Text
+  };
+type Int__270357528 = Int__616954475;
+type Int__616954475 = Int;
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type Map__158565046<K, V> = Map__297112838<K, V>;
+type Map__297112838<K, V> =
+  {var root : Node__46230540<K, V>; var size : Nat__490723111};
+type Map__605269027<K, V> = Map__158565046<K, V>;
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type PlanLimits__404885345 =
+  {
+    photoLimit : Nat;
+    plan : SubscriptionPlan__552945260;
+    price : Nat;
+    videoLimit : Nat
+  };
+type StarredEntry__293242851 =
+  {
+    createdAt : Time__900049286;
+    description : Text;
+    id : Nat;
+    imageUrl : Text;
+    name : Text;
+    prompt : Text;
+    updatedAt : Time__900049286;
+    userPrincipal : Principal
+  };
+type SubscriptionPlan__552945260 = {#basic; #growth; #max; #pro; #starter};
+type SubscriptionUsage__935103524 =
+  {
+    createdAt : Time__900049286;
+    lastReset : Time__900049286;
+    photosUsed : Nat;
+    plan : SubscriptionPlan__552945260;
+    videosUsed : Nat
+  };
+type Time__796480547 = Int__270357528;
+type Time__900049286 = Time__796480547;
+type UserProfile__491224006 =
+  {createdAt : Time__900049286; name : Text; principal : Principal};
+type UserRole__1054455867 = {#admin; #guest; #user};
+actor {
+  stable accessControlState :
+    {
+      var adminAssigned : Bool;
+      userRoles : Map__605269027<Principal, UserRole__1054455867>
+    };
+  stable aiGenerationLogs :
+    {
+      var root : Node__46230540<Nat, AiGenerationLog__629033411>;
+      var size : Nat__490723111
+    };
+  stable designEntries :
+    {
+      var root : Node__46230540<Int, DesignEntry__935033953>;
+      var size : Nat__490723111
+    };
+  stable var designIdCounter : Nat;
+  stable var nextAiLogId : Nat;
+  stable var nextStarredEntryId : Nat;
+  stable paymentClaims :
+    {var root : Node__46230540<Text, Bool>; var size : Nat__490723111};
+  stable planLimits : [(SubscriptionPlan__552945260, PlanLimits__404885345)];
+  stable starredEntries :
+    {
+      var root : Node__46230540<Nat, StarredEntry__293242851>;
+      var size : Nat__490723111
+    };
+  stable subscriptionUsage :
+    {
+      var root : Node__46230540<Principal, SubscriptionUsage__935103524>;
+      var size : Nat__490723111
+    };
+  stable var themeIdCounter : Nat;
+  stable userProfiles :
+    {
+      var root : Node__46230540<Principal, UserProfile__491224006>;
+      var size : Nat__490723111
+    };
+  stable userThemes :
+    {
+      var root :
+        Node__46230540<Principal, Map__605269027<Int, CustomTheme__406296023>>;
+      var size : Nat__490723111
+    }
+};

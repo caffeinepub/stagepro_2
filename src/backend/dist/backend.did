@@ -1,0 +1,157 @@
+type http_request_result = 
+ record {
+   body: blob;
+   headers: vec http_header;
+   status: nat;
+ };
+type http_header = 
+ record {
+   name: text;
+   value: text;
+ };
+type _ImmutableObjectStorageRefillResult = 
+ record {
+   success: opt bool;
+   topped_up_amount: opt nat;
+ };
+type _ImmutableObjectStorageRefillInformation = record {
+                                                  proposed_top_up_amount:
+                                                   opt nat;};
+type _ImmutableObjectStorageCreateCertificateResult = 
+ record {
+   blob_hash: text;
+   method: text;
+ };
+type UserRole = 
+ variant {
+   admin;
+   guest;
+   user;
+ };
+type UserProfile = 
+ record {
+   createdAt: Time;
+   name: text;
+   "principal": principal;
+ };
+type TransformationOutput = 
+ record {
+   body: blob;
+   headers: vec http_header;
+   status: nat;
+ };
+type TransformationInput = 
+ record {
+   context: blob;
+   response: http_request_result;
+ };
+type Time = int;
+type SubscriptionUsage = 
+ record {
+   createdAt: Time;
+   lastReset: Time;
+   photosUsed: nat;
+   plan: SubscriptionPlan;
+   videosUsed: nat;
+ };
+type SubscriptionPlan = 
+ variant {
+   basic;
+   growth;
+   max;
+   pro;
+   starter;
+ };
+type StarredEntry = 
+ record {
+   createdAt: Time;
+   description: text;
+   id: nat;
+   imageUrl: text;
+   name: text;
+   prompt: text;
+   updatedAt: Time;
+   userPrincipal: principal;
+ };
+type PlanLimits = 
+ record {
+   photoLimit: nat;
+   plan: SubscriptionPlan;
+   price: nat;
+   videoLimit: nat;
+ };
+type ExternalBlob = blob;
+type DesignEntry = 
+ record {
+   createdAt: Time;
+   "principal": principal;
+   roomType: text;
+   style: text;
+ };
+type CustomTheme = 
+ record {
+   createdAt: Time;
+   name: text;
+   "principal": principal;
+   prompt: text;
+ };
+type AiGenerationLog = 
+ record {
+   createdAt: Time;
+   id: nat;
+   inputImageBlobId: text;
+   outputImageBlobId: text;
+   prompt: text;
+   userPrincipal: principal;
+ };
+service : {
+  _immutableObjectStorageBlobsAreLive: (hashes: vec blob) -> (vec bool) query;
+  _immutableObjectStorageBlobsToDelete: () -> (vec blob) query;
+  _immutableObjectStorageConfirmBlobDeletion: (blobs: vec blob) -> ();
+  _immutableObjectStorageCreateCertificate: (blobHash: text) ->
+   (_ImmutableObjectStorageCreateCertificateResult);
+  _immutableObjectStorageRefillCashier: (refillInformation:
+   opt _ImmutableObjectStorageRefillInformation) ->
+   (_ImmutableObjectStorageRefillResult);
+  _immutableObjectStorageUpdateGatewayPrincipals: () -> ();
+  _initializeAccessControl: () -> ();
+  addCustomTheme: (name: text, prompt: text) -> (nat);
+  addDesign: (roomType: text, style: text) -> (nat);
+  addStarredEntry: (name: text, description: text, imageUrl: text, prompt:
+   text) -> (nat);
+  assignCallerUserRole: (user: principal, role: UserRole) -> ();
+  claimDodoPayment: (paymentId: text, planId: SubscriptionPlan) -> ();
+  createCheckoutSession: (planId: SubscriptionPlan, successUrl: text,
+   cancelUrl: text) -> (text);
+  deleteCustomTheme: (themeId: int) -> ();
+  deleteStarredEntry: (entryId: nat) -> ();
+  getAiGenerationLogCount: () -> (nat) query;
+  getAiGenerationLogs: () -> (vec AiGenerationLog) query;
+  getAiGenerationLogsReverse: () -> (vec AiGenerationLog) query;
+  getAiGenerationLogsSorted: () -> (vec AiGenerationLog) query;
+  getAllDesigns: () -> (vec DesignEntry) query;
+  getCallerUserProfile: () -> (opt UserProfile) query;
+  getCallerUserRole: () -> (UserRole) query;
+  getDesignHistorySorted: () -> (vec DesignEntry) query;
+  getImage: (image: ExternalBlob) -> (ExternalBlob) query;
+  getMyCustomThemes: () -> (vec CustomTheme) query;
+  getMyProfile: () -> (UserProfile) query;
+  getMyStarredEntries: () -> (vec StarredEntry) query;
+  getMyStarredEntryCount: () -> (nat);
+  getMySubscription: () -> (SubscriptionUsage) query;
+  getPlanLimitsQuery: (plan: SubscriptionPlan) -> (PlanLimits);
+  getStarredEntries: (userPrincipal: principal) -> (vec StarredEntry) query;
+  getTotalStarredEntryCount: () -> (nat) query;
+  getUserProfile: (user: principal) -> (opt UserProfile) query;
+  isCallerAdmin: () -> (bool) query;
+  logAiGeneration: (prompt: text, inputImageBlobId: text, outputImageBlobId:
+   text) -> ();
+  recordPhotoUsage: () -> ();
+  recordVideoUsage: () -> ();
+  saveCallerUserProfile: (profile: UserProfile) -> ();
+  selfRegister: (name: text) -> ();
+  setUserPlan: (user: principal, newPlan: SubscriptionPlan) -> ();
+  transform: (input: TransformationInput) -> (TransformationOutput) query;
+  updateMyProfile: (newName: text) -> ();
+  updateStarredEntry: (entryId: nat, name: text, description: text) -> ();
+}
