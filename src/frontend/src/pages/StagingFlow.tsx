@@ -55,7 +55,7 @@ interface Order {
   createdAt: string;
 }
 
-const FREE_IMAGE_LIMIT = 100;
+const FREE_IMAGE_LIMIT = 1;
 
 function getUsedFreeImages(): number {
   return Number.parseInt(localStorage.getItem("stagepro_free_used") || "0", 10);

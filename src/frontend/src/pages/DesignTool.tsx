@@ -1027,16 +1027,9 @@ export default function DesignTool({
       startProgress();
       try {
         const prompt = `STRICT INSTRUCTIONS (you MUST follow these exactly): ${instructions || "improve the overall look, keep structure identical"}. Refine this room design. Keep the overall layout and structure.`;
-        const refineImageUrl = await toDataUrl(target.generatedImageUrl);
-        const refineBase64 = refineImageUrl.startsWith("data:")
-          ? refineImageUrl.split(",")[1]
-          : refineImageUrl;
-        const refineMime = refineImageUrl.startsWith("data:")
-          ? refineImageUrl.split(";")[0].replace("data:", "")
-          : "image/jpeg";
+        // Pass the generated image URL directly to avoid CORS issues with base64 conversion
         const generatedUrl = await aimlTxt2Img(prompt, {
-          imageBase64: refineBase64,
-          imageMime: refineMime,
+          imageUrl: target.generatedImageUrl,
         });
         stopProgress();
         setProgress(100);
@@ -1728,7 +1721,14 @@ export default function DesignTool({
                           className="rounded-2xl overflow-hidden"
                           style={{
                             backgroundColor: "#FFFFFF",
-                            border: "1px solid #E2E8F0",
+                            border:
+                              refineTargetId === gen.id
+                                ? "2px solid #4ECDC4"
+                                : "1px solid #E2E8F0",
+                            boxShadow:
+                              refineTargetId === gen.id
+                                ? "0 0 0 3px rgba(78, 205, 196, 0.15)"
+                                : undefined,
                           }}
                           data-ocid="design.chat.card"
                         >

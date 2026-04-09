@@ -17,13 +17,13 @@ const PLANS = [
     price: 1,
     priceLabel: "$1",
     subtitle: "(Testing)",
-    photos: 9999,
+    photos: 8,
     color: "#6366F1",
     bg: "#EEF2FF",
     checkoutUrl:
       "https://checkout.dodopayments.com/buy/pdt_0NcETNKeXcW8lBTRBd5t3?quantity=1",
     features: [
-      "9,999 photo transformations/month",
+      "8 photo transformations/month",
       "All design tools",
       "Standard quality",
     ],
@@ -51,14 +51,14 @@ const PLANS = [
     price: 60,
     priceLabel: "$60",
     subtitle: "/mo",
-    photos: 50,
+    photos: 60,
     color: "#10B981",
     bg: "#D1FAE5",
     popular: true,
     checkoutUrl:
       "https://checkout.dodopayments.com/buy/pdt_0NcEQWZ68OJKYpXK2Itcb?quantity=1",
     features: [
-      "50 photo transformations/month",
+      "60 photo transformations/month",
       "All design tools",
       "HD quality",
       "Priority processing",
