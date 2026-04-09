@@ -191,7 +191,7 @@ export interface backendInterface {
     addDesign(roomType: string, style: string): Promise<bigint>;
     addStarredEntry(name: string, description: string, imageUrl: string, prompt: string): Promise<bigint>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    claimDodoPayment(paymentId: string, planId: SubscriptionPlan): Promise<void>;
+    claimDodoPayment(paymentId: string, planId: SubscriptionPlan): Promise<string>;
     createCheckoutSession(planId: SubscriptionPlan, successUrl: string, cancelUrl: string): Promise<string>;
     deleteCustomTheme(themeId: bigint): Promise<void>;
     deleteStarredEntry(entryId: bigint): Promise<void>;
@@ -213,6 +213,7 @@ export interface backendInterface {
     getStarredEntries(userPrincipal: Principal): Promise<Array<StarredEntry>>;
     getTotalStarredEntryCount(): Promise<bigint>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    handleDodoWebhook(payload: string, signature: string): Promise<string>;
     isCallerAdmin(): Promise<boolean>;
     logAiGeneration(prompt: string, inputImageBlobId: string, outputImageBlobId: string): Promise<void>;
     recordPhotoUsage(): Promise<void>;
@@ -381,7 +382,7 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async claimDodoPayment(arg0: string, arg1: SubscriptionPlan): Promise<void> {
+    async claimDodoPayment(arg0: string, arg1: SubscriptionPlan): Promise<string> {
         if (this.processError) {
             try {
                 const result = await this.actor.claimDodoPayment(arg0, to_candid_SubscriptionPlan_n10(this._uploadFile, this._downloadFile, arg1));
@@ -687,6 +688,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getUserProfile(arg0);
             return from_candid_opt_n12(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async handleDodoWebhook(arg0: string, arg1: string): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.handleDodoWebhook(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.handleDodoWebhook(arg0, arg1);
+            return result;
         }
     }
     async isCallerAdmin(): Promise<boolean> {

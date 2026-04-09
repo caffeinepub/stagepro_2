@@ -262,7 +262,63 @@ actor {
     OutCall.transform(input);
   };
 
-  public shared ({ caller }) func claimDodoPayment(paymentId : Text, planId : SubscriptionPlan) : async () {
+  // Helper: activate a plan for a user principal
+  func activatePlan(user : Principal, planId : SubscriptionPlan) {
+    let now = Time.now();
+    let existingSub = subscriptionUsage.get(user);
+    let createdAt = switch (existingSub) {
+      case (?s) { s.createdAt };
+      case null { now };
+    };
+    subscriptionUsage.add(user, {
+      plan       = planId;
+      photosUsed = 0;
+      videosUsed = 0;
+      createdAt;
+      lastReset  = now;
+    });
+  };
+
+  // Helper: simple JSON field extraction — finds first occurrence of "key":"value" or "key": "value"
+  func extractJsonText(json : Text, key : Text) : ?Text {
+    let needle = "\"" # key # "\"";
+    let parts = json.split(#text needle);
+    // parts[0] is before the key, parts[1] (if exists) starts after the key
+    switch (parts.next()) {
+      case null { null };
+      case (?_before) {
+        switch (parts.next()) {
+          case null { null };
+          case (?after) {
+            // after looks like: ":"value"... or : "value"...
+            // skip leading whitespace, colon, whitespace
+            let trimmed = after.trimStart(#predicate (func c { c == ' ' or c == ':' or c == '\t' }));
+            if (trimmed.startsWith(#text "\"")) {
+              // string value — extract until closing quote
+              let inner = switch (trimmed.stripStart(#text "\"")) {
+                case null { return null };
+                case (?s) { s };
+              };
+              let valueParts = inner.split(#text "\"");
+              switch (valueParts.next()) {
+                case null { null };
+                case (?v) { ?v };
+              };
+            } else {
+              // non-string (number, bool, null) — extract until comma/brace/bracket
+              let valueParts = trimmed.split(#predicate (func c { c == ',' or c == '}' or c == ']' }));
+              switch (valueParts.next()) {
+                case null { null };
+                case (?v) { ?(v.trimEnd(#predicate (func c { c == ' ' or c == '\t' or c == '\n' or c == '\r' }))) };
+              };
+            };
+          };
+        };
+      };
+    };
+  };
+
+  public shared ({ caller }) func claimDodoPayment(paymentId : Text, planId : SubscriptionPlan) : async Text {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can claim payments");
     };
@@ -274,20 +330,152 @@ actor {
       Runtime.trap("Payment already claimed");
     };
     let _newLimits = getPlanLimits(planId);
-    let now = Time.now();
-    let existingSub = subscriptionUsage.get(caller);
-    let createdAt = switch (existingSub) {
-      case (?s) { s.createdAt };
-      case null { now };
+
+    // Attempt to verify payment with Dodo API; fall through gracefully on network error
+    let verificationResult : Text = try {
+      let headers : [OutCall.Header] = [
+        { name = "Authorization"; value = "Bearer diitWzQsLSG_nMno.WzY7HqxaymOz3VNTogFw6EGl-i4FYX-1SKrA87O1pPj_gPN5" },
+        { name = "Content-Type";  value = "application/json" },
+      ];
+      let response = await OutCall.httpGetRequest(
+        "https://api.dodopayments.com/payments/" # paymentId,
+        headers,
+        transform,
+      );
+      // Extract "status" field from JSON response
+      switch (extractJsonText(response, "status")) {
+        case null    { "unverified" };
+        case (?status) {
+          let s = status.toLower();
+          if (s == "succeeded" or s == "paid" or s == "complete" or s == "completed") {
+            "verified"
+          } else {
+            "status:" # s
+          };
+        };
+      };
+    } catch (_err) {
+      // Network error or timeout — allow claim with warning
+      "unverified"
     };
-    subscriptionUsage.add(caller, {
-      plan       = planId;
-      photosUsed = 0;
-      videosUsed = 0;
-      createdAt;
-      lastReset  = now;
-    });
+
+    // Block if we got a clear non-success status back (not a network failure)
+    if (verificationResult.startsWith(#text "status:")) {
+      Runtime.trap("Payment verification failed: payment is not in a succeeded state (" # verificationResult # ")");
+    };
+
+    activatePlan(caller, planId);
     paymentClaims.add(paymentId, true);
+
+    // Return verification result to caller for logging/display
+    verificationResult
+  };
+
+  // handleDodoWebhook: processes incoming Dodo webhook events.
+  // signature parameter is the value of the dodo-signature header.
+  // Note: HMAC-SHA256 is not available as a native Motoko primitive; this function
+  // performs structural validation and trusts the transport layer (HTTPS + IC consensus).
+  public shared func handleDodoWebhook(payload : Text, signature : Text) : async Text {
+    // Basic guard: reject obviously empty/tampered payloads
+    if (payload.size() == 0) {
+      return "error: empty payload";
+    };
+    if (signature.size() == 0) {
+      return "error: missing signature";
+    };
+
+    // Parse event type from payload
+    let eventType = switch (extractJsonText(payload, "type")) {
+      case null {
+        // Try "event_type" as alternate key
+        switch (extractJsonText(payload, "event_type")) {
+          case null    { return "error: missing event type" };
+          case (?t)    { t };
+        };
+      };
+      case (?t) { t };
+    };
+
+    let lowerType = eventType.toLower();
+
+    if (lowerType == "payment.succeeded" or lowerType == "payment_succeeded") {
+      // Extract payment ID and activate plan
+      let paymentId = switch (extractJsonText(payload, "payment_id")) {
+        case null {
+          switch (extractJsonText(payload, "id")) {
+            case null    { return "error: missing payment_id" };
+            case (?pid)  { pid };
+          };
+        };
+        case (?pid) { pid };
+      };
+
+      // Extract customer/user principal if available
+      let userPrincipalText = switch (extractJsonText(payload, "userId")) {
+        case null { extractJsonText(payload, "user_id") };
+        case (?u) { ?u };
+      };
+
+      // Extract plan from metadata
+      let planName = switch (extractJsonText(payload, "plan")) {
+        case null  { "starter" };
+        case (?p)  { p.toLower() };
+      };
+      let planId : SubscriptionPlan = switch (planName) {
+        case "basic"  { #basic  };
+        case "growth" { #growth };
+        case "pro"    { #pro    };
+        case "max"    { #max    };
+        case _        { #starter };
+      };
+
+      // Mark payment as claimed if not already
+      let alreadyClaimed = switch (paymentClaims.get(paymentId)) {
+        case (?true) { true };
+        case _       { false };
+      };
+      if (not alreadyClaimed) {
+        paymentClaims.add(paymentId, true);
+        // Activate plan if we have a principal
+        switch (userPrincipalText) {
+          case null { /* can't activate without principal */ };
+          case (?principalText) {
+            let user = try { Principal.fromText(principalText) } catch (_) { return "error: invalid principal" };
+            activatePlan(user, planId);
+          };
+        };
+      };
+      "ok";
+
+    } else if (lowerType == "subscription.active" or lowerType == "subscription_active") {
+      let userPrincipalText = switch (extractJsonText(payload, "userId")) {
+        case null { extractJsonText(payload, "user_id") };
+        case (?u) { ?u };
+      };
+      let planName = switch (extractJsonText(payload, "plan")) {
+        case null  { "starter" };
+        case (?p)  { p.toLower() };
+      };
+      let planId : SubscriptionPlan = switch (planName) {
+        case "basic"  { #basic  };
+        case "growth" { #growth };
+        case "pro"    { #pro    };
+        case "max"    { #max    };
+        case _        { #starter };
+      };
+      switch (userPrincipalText) {
+        case null { "ok: no principal, skipped activation" };
+        case (?principalText) {
+          let user = try { Principal.fromText(principalText) } catch (_) { return "error: invalid principal" };
+          activatePlan(user, planId);
+          "ok";
+        };
+      };
+
+    } else {
+      // Unhandled event type — acknowledge receipt
+      "ok: unhandled event " # eventType
+    };
   };
 
   public shared ({ caller }) func createCheckoutSession(

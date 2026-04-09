@@ -118,7 +118,7 @@ export interface _SERVICE {
   'addDesign' : ActorMethod<[string, string], bigint>,
   'addStarredEntry' : ActorMethod<[string, string, string, string], bigint>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'claimDodoPayment' : ActorMethod<[string, SubscriptionPlan], undefined>,
+  'claimDodoPayment' : ActorMethod<[string, SubscriptionPlan], string>,
   'createCheckoutSession' : ActorMethod<
     [SubscriptionPlan, string, string],
     string
@@ -143,6 +143,7 @@ export interface _SERVICE {
   'getStarredEntries' : ActorMethod<[Principal], Array<StarredEntry>>,
   'getTotalStarredEntryCount' : ActorMethod<[], bigint>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'handleDodoWebhook' : ActorMethod<[string, string], string>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'logAiGeneration' : ActorMethod<[string, string, string], undefined>,
   'recordPhotoUsage' : ActorMethod<[], undefined>,

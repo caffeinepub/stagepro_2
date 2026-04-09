@@ -98,7 +98,7 @@ export interface backendInterface {
     addDesign(roomType: string, style: string): Promise<bigint>;
     addStarredEntry(name: string, description: string, imageUrl: string, prompt: string): Promise<bigint>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    claimDodoPayment(paymentId: string, planId: SubscriptionPlan): Promise<void>;
+    claimDodoPayment(paymentId: string, planId: SubscriptionPlan): Promise<string>;
     createCheckoutSession(planId: SubscriptionPlan, successUrl: string, cancelUrl: string): Promise<string>;
     deleteCustomTheme(themeId: bigint): Promise<void>;
     deleteStarredEntry(entryId: bigint): Promise<void>;
@@ -120,6 +120,7 @@ export interface backendInterface {
     getStarredEntries(userPrincipal: Principal): Promise<Array<StarredEntry>>;
     getTotalStarredEntryCount(): Promise<bigint>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    handleDodoWebhook(payload: string, signature: string): Promise<string>;
     isCallerAdmin(): Promise<boolean>;
     logAiGeneration(prompt: string, inputImageBlobId: string, outputImageBlobId: string): Promise<void>;
     recordPhotoUsage(): Promise<void>;

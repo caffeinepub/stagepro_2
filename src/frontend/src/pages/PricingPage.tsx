@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import type { Identity } from "@icp-sdk/core/agent";
-import { ArrowLeft, Check, Crown, ExternalLink, Info } from "lucide-react";
+import { ArrowLeft, Check, Crown, Info, VideoOff } from "lucide-react";
 
 interface PricingPageProps {
   onBack: () => void;
@@ -10,22 +10,20 @@ interface PricingPageProps {
   onTerms?: () => void;
 }
 
-// Replace these product IDs with the actual Dodo product IDs from your dashboard
 const PLANS = [
   {
     id: "starter",
     name: "Starter",
-    price: 12,
-    photos: 8,
-    videos: 1,
+    price: 1,
+    priceLabel: "$1",
+    subtitle: "(Testing)",
+    photos: 9999,
     color: "#6366F1",
     bg: "#EEF2FF",
-    dodoProductId: "pdt_0NcEQIVqUcObPV0f0WBYi",
     checkoutUrl:
-      "https://checkout.dodopayments.com/buy/pdt_0NcEQIVqUcObPV0f0WBYi?quantity=1",
+      "https://checkout.dodopayments.com/buy/pdt_0NcETNKeXcW8lBTRBd5t3?quantity=1",
     features: [
-      "8 photo transformations/month",
-      "1 video generation/month",
+      "9,999 photo transformations/month",
       "All design tools",
       "Standard quality",
     ],
@@ -34,16 +32,15 @@ const PLANS = [
     id: "basic",
     name: "Basic",
     price: 24,
+    priceLabel: "$24",
+    subtitle: "/mo",
     photos: 20,
-    videos: 2,
     color: "#0EA5E9",
     bg: "#E0F2FE",
-    dodoProductId: "pdt_0NcEQIVqUcObPV0f0WBYi",
     checkoutUrl:
       "https://checkout.dodopayments.com/buy/pdt_0NcEQIVqUcObPV0f0WBYi?quantity=1",
     features: [
       "20 photo transformations/month",
-      "2 video generations/month",
       "All design tools",
       "HD quality",
     ],
@@ -52,17 +49,16 @@ const PLANS = [
     id: "growth",
     name: "Growth",
     price: 60,
+    priceLabel: "$60",
+    subtitle: "/mo",
     photos: 50,
-    videos: 5,
     color: "#10B981",
     bg: "#D1FAE5",
     popular: true,
-    dodoProductId: "pdt_0NcEQWZ68OJKYpXK2Itcb",
     checkoutUrl:
       "https://checkout.dodopayments.com/buy/pdt_0NcEQWZ68OJKYpXK2Itcb?quantity=1",
     features: [
       "50 photo transformations/month",
-      "5 video generations/month",
       "All design tools",
       "HD quality",
       "Priority processing",
@@ -72,16 +68,15 @@ const PLANS = [
     id: "pro",
     name: "Pro",
     price: 120,
+    priceLabel: "$120",
+    subtitle: "/mo",
     photos: 120,
-    videos: 12,
     color: "#F59E0B",
     bg: "#FEF3C7",
-    dodoProductId: "pdt_0NcEQcgotVNev0nWK5JKV",
     checkoutUrl:
       "https://checkout.dodopayments.com/buy/pdt_0NcEQcgotVNev0nWK5JKV?quantity=1",
     features: [
       "120 photo transformations/month",
-      "12 video generations/month",
       "All design tools",
       "Ultra HD quality",
       "Priority processing",
@@ -91,16 +86,15 @@ const PLANS = [
     id: "max",
     name: "Max",
     price: 240,
+    priceLabel: "$240",
+    subtitle: "/mo",
     photos: 250,
-    videos: 50,
     color: "#EC4899",
     bg: "#FCE7F3",
-    dodoProductId: "pdt_0NcEQjiNC7Oh2DmJM0xqO",
     checkoutUrl:
       "https://checkout.dodopayments.com/buy/pdt_0NcEQjiNC7Oh2DmJM0xqO?quantity=1",
     features: [
       "250 photo transformations/month",
-      "50 video generations/month",
       "All design tools",
       "Ultra HD quality",
       "Priority processing",
@@ -121,7 +115,20 @@ export default function PricingPage({
       onLogin();
       return;
     }
-    window.open(plan.checkoutUrl, "_blank");
+    const successUrl = `${window.location.origin}${window.location.pathname}?payment=success&plan=${plan.id}`;
+    const cancelUrl = `${window.location.origin}${window.location.pathname}?payment=cancelled`;
+
+    let url = plan.checkoutUrl;
+    try {
+      const parsed = new URL(url);
+      parsed.searchParams.set("redirect_url", successUrl);
+      parsed.searchParams.set("cancel_url", cancelUrl);
+      url = parsed.toString();
+    } catch {
+      // If URL parsing fails, use as-is
+    }
+
+    window.location.href = url;
   };
 
   return (
@@ -139,7 +146,16 @@ export default function PricingPage({
             type="button"
             onClick={onBack}
             data-ocid="pricing.back_button"
-            className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
+            style={{ border: "1px solid #E2E8F0" }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                "#F3F4F6";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                "transparent";
+            }}
           >
             <ArrowLeft className="h-4 w-4" style={{ color: "#6B7280" }} />
           </button>
@@ -150,7 +166,7 @@ export default function PricingPage({
                 background: "linear-gradient(135deg, #4ECDC4, #2D9B94)",
               }}
             >
-              R
+              S
             </div>
             <span className="font-bold text-sm" style={{ color: "#111827" }}>
               StagePro
@@ -170,6 +186,28 @@ export default function PricingPage({
         )}
       </header>
 
+      {/* Video not available notice */}
+      <div
+        className="flex items-center justify-center gap-2.5 px-4 py-3"
+        style={{
+          backgroundColor: "#FFF7ED",
+          borderBottom: "1px solid #FED7AA",
+        }}
+        data-ocid="pricing.video_notice"
+      >
+        <VideoOff
+          className="h-4 w-4 flex-shrink-0"
+          style={{ color: "#C2410C" }}
+        />
+        <p
+          className="text-sm font-medium text-center"
+          style={{ color: "#9A3412" }}
+        >
+          Video generation is not available at this time. Stay tuned for future
+          updates.
+        </p>
+      </div>
+
       <main className="max-w-6xl mx-auto px-4 py-12">
         <div className="text-center mb-10">
           <div
@@ -185,11 +223,9 @@ export default function PricingPage({
             Choose Your Plan
           </h1>
           <p className="text-lg" style={{ color: "#6B7280" }}>
-            Start with 1 free photo. Upgrade for more transformations.
+            Start with 1 free image transformation. Upgrade for more.
           </p>
         </div>
-
-        {/* How to subscribe notice - removed: all plans now go directly to Dodo checkout */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {PLANS.map((plan) => (
@@ -208,7 +244,7 @@ export default function PricingPage({
             >
               {plan.popular && (
                 <div
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white"
+                  className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-bold text-white whitespace-nowrap"
                   style={{ backgroundColor: plan.color }}
                 >
                   Most Popular
@@ -233,25 +269,18 @@ export default function PricingPage({
                   className="text-3xl font-bold"
                   style={{ color: plan.color }}
                 >
-                  ${plan.price}
+                  {plan.priceLabel}
                 </span>
                 <span className="text-sm" style={{ color: "#9CA3AF" }}>
-                  /mo
+                  {plan.subtitle}
                 </span>
               </div>
-              <div className="flex gap-3 mb-4">
+              <div className="flex flex-wrap gap-2 mb-4">
                 <span
                   className="text-xs px-2 py-1 rounded-full font-medium"
                   style={{ backgroundColor: plan.bg, color: plan.color }}
                 >
-                  {plan.photos.toLocaleString()} photos
-                </span>
-                <span
-                  className="text-xs px-2 py-1 rounded-full font-medium"
-                  style={{ backgroundColor: plan.bg, color: plan.color }}
-                >
-                  {plan.videos.toLocaleString()} video
-                  {plan.videos > 1 ? "s" : ""}
+                  {plan.photos.toLocaleString()} photos/mo
                 </span>
               </div>
 
@@ -278,14 +307,7 @@ export default function PricingPage({
                   color: plan.popular ? "#FFFFFF" : plan.color,
                 }}
               >
-                {isAuthenticated ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    {`Get ${plan.name} — $${plan.price}/mo`}
-                  </span>
-                ) : (
-                  "Sign In to Subscribe"
-                )}
+                {isAuthenticated ? `Get ${plan.name}` : "Sign In to Subscribe"}
               </Button>
             </div>
           ))}
@@ -301,16 +323,18 @@ export default function PricingPage({
             style={{ color: "#16A34A" }}
           />
           <p className="text-sm" style={{ color: "#166534" }}>
-            Clicking a plan opens the Dodo Payments secure checkout in a new
-            tab. Your subscription activates immediately after payment.
+            Clicking a plan takes you to the Dodo Payments secure checkout.
+            After payment, you'll be redirected back and your plan activates
+            automatically.
           </p>
         </div>
 
         <p className="text-center text-xs mt-6" style={{ color: "#9CA3AF" }}>
-          Payments processed securely by Dodo Payments. Cancel anytime.
+          Payments processed securely by Dodo Payments · All prices in USD ·
+          Cancel anytime
           {onTerms && (
             <>
-              {" "}
+              {" · "}
               By subscribing you agree to our{" "}
               <button
                 type="button"
@@ -319,7 +343,6 @@ export default function PricingPage({
               >
                 Terms of Service
               </button>
-              .
             </>
           )}
         </p>

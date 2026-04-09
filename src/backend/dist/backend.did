@@ -120,7 +120,7 @@ service : {
   addStarredEntry: (name: text, description: text, imageUrl: text, prompt:
    text) -> (nat);
   assignCallerUserRole: (user: principal, role: UserRole) -> ();
-  claimDodoPayment: (paymentId: text, planId: SubscriptionPlan) -> ();
+  claimDodoPayment: (paymentId: text, planId: SubscriptionPlan) -> (text);
   createCheckoutSession: (planId: SubscriptionPlan, successUrl: text,
    cancelUrl: text) -> (text);
   deleteCustomTheme: (themeId: int) -> ();
@@ -143,6 +143,7 @@ service : {
   getStarredEntries: (userPrincipal: principal) -> (vec StarredEntry) query;
   getTotalStarredEntryCount: () -> (nat) query;
   getUserProfile: (user: principal) -> (opt UserProfile) query;
+  handleDodoWebhook: (payload: text, signature: text) -> (text);
   isCallerAdmin: () -> (bool) query;
   logAiGeneration: (prompt: text, inputImageBlobId: text, outputImageBlobId:
    text) -> ();

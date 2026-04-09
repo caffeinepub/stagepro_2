@@ -76,6 +76,7 @@ interface DesignToolProps {
   onLogout?: () => void;
   onHistory?: () => void;
   actor?: any;
+  isAdmin?: boolean;
 }
 
 interface Generation {
@@ -108,8 +109,8 @@ interface SubscriptionInfo {
   photoLimit: bigint;
 }
 
-const _FREE_PHOTO_LIMIT = 9999;
-const _FREE_VIDEO_LIMIT = 9999;
+const _FREE_PHOTO_LIMIT = 1;
+const _FREE_VIDEO_LIMIT = 0;
 const FREE_USAGE_KEY = "stagepro_free_usage";
 
 function getFreeUsage() {
@@ -545,64 +546,111 @@ function SidebarContent({
         )}
 
         {/* Tools */}
-        {TOOL_GROUPS.map((group) => (
-          <div key={group.label} className="mb-2">
-            <p
-              className="px-3 py-2 text-xs font-semibold uppercase tracking-wider"
-              style={{ color: "#9CA3AF" }}
-            >
-              {group.label}
-            </p>
-            {group.tools.map((tool) => {
-              const Icon = tool.icon;
-              const isActive = selectedTool === tool.id;
-              return (
-                <button
-                  key={tool.id}
-                  type="button"
-                  onClick={() => onSelect(tool.id)}
-                  className="w-full flex items-center gap-2.5 py-2 px-3 transition-colors text-left"
+        {TOOL_GROUPS.map((group) => {
+          const isVideoGroup = group.label === "Video Generation";
+          return (
+            <div key={group.label} className="mb-2">
+              <p
+                className="px-3 py-2 text-xs font-semibold uppercase tracking-wider"
+                style={{ color: "#9CA3AF" }}
+              >
+                {group.label}
+              </p>
+              {isVideoGroup && (
+                <div
+                  className="mx-3 mb-2 px-3 py-2 rounded-lg text-xs"
                   style={{
-                    backgroundColor: isActive ? "#E6F7F6" : "transparent",
-                    borderLeft: isActive
-                      ? "2px solid #4ECDC4"
-                      : "2px solid transparent",
-                    color: isActive ? "#4ECDC4" : "#374151",
-                  }}
-                  data-ocid={`sidebar.${tool.id.toLowerCase()}.button`}
-                  onMouseEnter={(e) => {
-                    if (!isActive)
-                      (
-                        e.currentTarget as HTMLButtonElement
-                      ).style.backgroundColor = "#F8F9FA";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive)
-                      (
-                        e.currentTarget as HTMLButtonElement
-                      ).style.backgroundColor = "transparent";
+                    backgroundColor: "#FFF7ED",
+                    border: "1px solid #FED7AA",
+                    color: "#92400E",
                   }}
                 >
-                  <Icon className="h-4 w-4 flex-shrink-0" />
-                  <span
-                    className="text-sm flex-1 leading-tight"
-                    style={{ color: isActive ? "#4ECDC4" : "#374151" }}
-                  >
-                    {tool.label}
-                  </span>
-                  {tool.beta && (
-                    <span
-                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: "#CCFAF7", color: "#0D9488" }}
+                  Video generation coming soon
+                </div>
+              )}
+              {group.tools.map((tool) => {
+                const Icon = tool.icon;
+                const isVideoTool =
+                  tool.id === "IMAGE_TO_VIDEO" ||
+                  tool.id === "AI_VIRTUAL_TOUR" ||
+                  tool.id === "AI_360_PANORAMA";
+                const isActive = selectedTool === tool.id && !isVideoTool;
+                if (isVideoTool) {
+                  return (
+                    <div
+                      key={tool.id}
+                      className="w-full flex items-center gap-2.5 py-2 px-3 text-left cursor-not-allowed"
+                      style={{
+                        borderLeft: "2px solid transparent",
+                        opacity: 0.45,
+                      }}
+                      title="Video generation coming soon"
+                      data-ocid={`sidebar.${tool.id.toLowerCase()}.disabled`}
                     >
-                      Beta
+                      <Icon className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                      <span
+                        className="text-sm flex-1 leading-tight"
+                        style={{ color: "#9CA3AF" }}
+                      >
+                        {tool.label}
+                      </span>
+                      <span
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: "#FEF3C7", color: "#D97706" }}
+                      >
+                        Soon
+                      </span>
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    key={tool.id}
+                    type="button"
+                    onClick={() => onSelect(tool.id)}
+                    className="w-full flex items-center gap-2.5 py-2 px-3 transition-colors text-left"
+                    style={{
+                      backgroundColor: isActive ? "#E6F7F6" : "transparent",
+                      borderLeft: isActive
+                        ? "2px solid #4ECDC4"
+                        : "2px solid transparent",
+                      color: isActive ? "#4ECDC4" : "#374151",
+                    }}
+                    data-ocid={`sidebar.${tool.id.toLowerCase()}.button`}
+                    onMouseEnter={(e) => {
+                      if (!isActive)
+                        (
+                          e.currentTarget as HTMLButtonElement
+                        ).style.backgroundColor = "#F8F9FA";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive)
+                        (
+                          e.currentTarget as HTMLButtonElement
+                        ).style.backgroundColor = "transparent";
+                    }}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span
+                      className="text-sm flex-1 leading-tight"
+                      style={{ color: isActive ? "#4ECDC4" : "#374151" }}
+                    >
+                      {tool.label}
                     </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        ))}
+                    {tool.beta && (
+                      <span
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: "#CCFAF7", color: "#0D9488" }}
+                      >
+                        Beta
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
     </ScrollArea>
   );
@@ -617,6 +665,7 @@ export default function DesignTool({
   onLogout,
   onHistory,
   actor,
+  isAdmin = false,
 }: DesignToolProps) {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>("");
@@ -782,9 +831,9 @@ export default function DesignTool({
   // Compute effective limits
   // While subscription is loading, use generous limits so the create button isn't blocked.
   // Once loaded, use the actual plan limits. If no subscription found, fall back to free limits.
-  // UNLIMITED MODE
-  const photoLimit = 9999;
-  const videoLimit = 9999;
+  // UNLIMITED MODE — admin always gets full unlimited access
+  const photoLimit = isAdmin ? 999999 : 9999;
+  const videoLimit = isAdmin ? 999999 : 9999;
   const photosUsed = 0;
   const videosUsed = 0;
 
@@ -1108,7 +1157,9 @@ export default function DesignTool({
       return;
     }
     if (!actor) {
-      toast.error("Not connected to backend");
+      toast.error(
+        "Still connecting to backend — please wait a moment and try again",
+      );
       return;
     }
     setIsSavingStar(true);
@@ -1129,7 +1180,7 @@ export default function DesignTool({
     }
   };
 
-  const handleVideoDownload = (gen: VideoGeneration) => {
+  const _handleVideoDownload = (gen: VideoGeneration) => {
     const a = document.createElement("a");
     a.href = gen.videoUrl;
     a.download = `stagepro-video-${gen.duration}s.mp4`;
@@ -1148,7 +1199,7 @@ export default function DesignTool({
     setInputText("");
   };
 
-  const startVideoRefine = (genId: string) => {
+  const _startVideoRefine = (genId: string) => {
     setVideoRefineTargetId(genId);
     setRefineTargetId(null);
     setSelectedTool("IMAGE_TO_VIDEO");
@@ -1179,8 +1230,11 @@ export default function DesignTool({
   const year = new Date().getFullYear();
   const caffeineHref = `https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(typeof window !== "undefined" ? window.location.hostname : "")}`;
 
-  const planName =
-    isAuthenticated && subscriptionInfo ? subscriptionInfo.plan : "Free";
+  const planName = isAdmin
+    ? "Admin"
+    : isAuthenticated && subscriptionInfo
+      ? subscriptionInfo.plan
+      : "Free";
 
   return (
     <div
@@ -1248,21 +1302,6 @@ export default function DesignTool({
                 {isAuthenticated && subscriptionLoading
                   ? "..."
                   : `${photosRemaining} photo${photosRemaining !== 1 ? "s" : ""}`}
-              </span>
-            </div>
-            <div className="w-px h-3" style={{ backgroundColor: "#D1D5DB" }} />
-            <div className="flex items-center gap-1.5">
-              <Clapperboard
-                className="h-3 w-3"
-                style={{ color: videosRemaining > 0 ? "#6366F1" : "#EF4444" }}
-              />
-              <span
-                className="text-xs font-medium"
-                style={{ color: videosRemaining > 0 ? "#374151" : "#EF4444" }}
-              >
-                {isAuthenticated && subscriptionLoading
-                  ? "..."
-                  : `${videosRemaining} video${videosRemaining !== 1 ? "s" : ""}`}
               </span>
             </div>
             <div className="w-px h-3" style={{ backgroundColor: "#D1D5DB" }} />
@@ -1371,161 +1410,71 @@ export default function DesignTool({
                 >
                   Images ({generations.length})
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setHistoryTab("videos")}
-                  className="flex-1 py-1.5 text-xs font-medium transition-colors"
-                  style={{
-                    backgroundColor:
-                      historyTab === "videos" ? "#6366F1" : "#FFFFFF",
-                    color: historyTab === "videos" ? "#FFFFFF" : "#6B7280",
-                  }}
-                  data-ocid="design.history.videos.tab"
-                >
-                  Videos ({videoGenerations.length})
-                </button>
               </div>
 
               <ScrollArea className="h-[calc(100vh-120px)] mt-2 pr-1">
-                {historyTab === "images" ? (
-                  generations.length === 0 ? (
-                    <div
-                      className="flex flex-col items-center justify-center py-20 gap-3"
-                      data-ocid="design.history.empty_state"
-                    >
-                      <Clock
-                        className="h-10 w-10"
-                        style={{ color: "#E2E8F0" }}
-                      />
-                      <p className="text-sm" style={{ color: "#6B7280" }}>
-                        No image generations yet
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 pb-8">
-                      {generations.map((gen, idx) => (
-                        <div
-                          key={gen.id}
-                          className="rounded-xl overflow-hidden"
-                          style={{
-                            border: "1px solid #E2E8F0",
-                            backgroundColor: "#F8F9FA",
-                          }}
-                          data-ocid={`design.history.item.${idx + 1}`}
-                        >
-                          <img
-                            src={gen.generatedImageUrl}
-                            alt={`Version ${gen.version}`}
-                            className="w-full h-32 object-cover"
-                          />
-                          <div className="p-3">
-                            <div className="flex items-center justify-between mb-1">
-                              <span
-                                className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                                style={{
-                                  backgroundColor: "#E6F7F6",
-                                  color: "#4ECDC4",
-                                }}
-                              >
-                                Version {gen.version}
-                              </span>
-                              <span
-                                className="text-xs"
-                                style={{ color: "#9CA3AF" }}
-                              >
-                                {gen.timestamp.toLocaleTimeString([], {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
-                              </span>
-                            </div>
-                            <p
-                              className="text-xs mt-1"
-                              style={{ color: "#6B7280" }}
-                            >
-                              {gen.roomType && `${gen.roomType} · `}
-                              {gen.tool}
-                              {gen.style && ` · ${gen.style}`}
-                            </p>
-                            {gen.instructions && (
-                              <p
-                                className="text-xs mt-1 truncate"
-                                style={{ color: "#9CA3AF" }}
-                              >
-                                "{gen.instructions}"
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                ) : videoGenerations.length === 0 ? (
+                {generations.length === 0 ? (
                   <div
                     className="flex flex-col items-center justify-center py-20 gap-3"
-                    data-ocid="design.history.videos.empty_state"
+                    data-ocid="design.history.empty_state"
                   >
-                    <Clapperboard
-                      className="h-10 w-10"
-                      style={{ color: "#E2E8F0" }}
-                    />
+                    <Clock className="h-10 w-10" style={{ color: "#E2E8F0" }} />
                     <p className="text-sm" style={{ color: "#6B7280" }}>
-                      No videos yet
+                      No image generations yet
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-3 pb-8">
-                    {videoGenerations.map((vid, idx) => (
+                    {generations.map((gen, idx) => (
                       <div
-                        key={vid.id}
+                        key={gen.id}
                         className="rounded-xl overflow-hidden"
                         style={{
                           border: "1px solid #E2E8F0",
                           backgroundColor: "#F8F9FA",
                         }}
-                        data-ocid={`design.history.video.item.${idx + 1}`}
+                        data-ocid={`design.history.item.${idx + 1}`}
                       >
-                        <video
-                          src={vid.videoUrl}
+                        <img
+                          src={gen.generatedImageUrl}
+                          alt={`Version ${gen.version}`}
                           className="w-full h-32 object-cover"
-                          muted
                         />
                         <div className="p-3">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center justify-between mb-1">
                             <span
                               className="text-xs font-semibold px-2 py-0.5 rounded-full"
                               style={{
-                                backgroundColor: "#EEF2FF",
-                                color: "#6366F1",
+                                backgroundColor: "#E6F7F6",
+                                color: "#4ECDC4",
                               }}
                             >
-                              {vid.duration}s
+                              Version {gen.version}
                             </span>
                             <span
-                              className="text-xs px-2 py-0.5 rounded-full"
-                              style={{
-                                backgroundColor: "#F3F4F6",
-                                color: "#6B7280",
-                              }}
-                            >
-                              {vid.resolution}
-                            </span>
-                            <span
-                              className="text-xs ml-auto"
+                              className="text-xs"
                               style={{ color: "#9CA3AF" }}
                             >
-                              {vid.timestamp.toLocaleTimeString([], {
+                              {gen.timestamp.toLocaleTimeString([], {
                                 hour: "2-digit",
                                 minute: "2-digit",
                               })}
                             </span>
                           </div>
-                          {vid.prompt && (
+                          <p
+                            className="text-xs mt-1"
+                            style={{ color: "#6B7280" }}
+                          >
+                            {gen.roomType && `${gen.roomType} · `}
+                            {gen.tool}
+                            {gen.style && ` · ${gen.style}`}
+                          </p>
+                          {gen.instructions && (
                             <p
                               className="text-xs mt-1 truncate"
                               style={{ color: "#9CA3AF" }}
                             >
-                              "{vid.prompt}"
+                              "{gen.instructions}"
                             </p>
                           )}
                         </div>
@@ -1538,6 +1487,24 @@ export default function DesignTool({
           </Sheet>
         </div>
       </header>
+
+      {/* Video unavailable notice */}
+      <div
+        className="flex-shrink-0 flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium"
+        style={{
+          backgroundColor: "#FFF7ED",
+          borderBottom: "1px solid #FED7AA",
+          color: "#92400E",
+        }}
+        data-ocid="design.video.unavailable_banner"
+      >
+        <Clapperboard
+          className="h-3.5 w-3.5 flex-shrink-0"
+          style={{ color: "#D97706" }}
+        />
+        Video generation is not available at this time. Only image generation is
+        supported.
+      </div>
 
       {/* Body: sidebar + main */}
       <div className="flex flex-1 overflow-hidden">
@@ -1886,105 +1853,9 @@ export default function DesignTool({
                     }
 
                     const vid = item.data;
-                    return (
-                      <motion.div
-                        key={vid.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.35 }}
-                        className="rounded-2xl overflow-hidden"
-                        style={{
-                          backgroundColor: "#FFFFFF",
-                          border: "1px solid #C7D2FE",
-                        }}
-                        data-ocid="design.chat.video.card"
-                      >
-                        <div
-                          className="flex items-center justify-between px-4 py-3"
-                          style={{
-                            borderBottom: "1px solid #E2E8F0",
-                            backgroundColor: "#F5F3FF",
-                          }}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Clapperboard
-                              className="h-4 w-4"
-                              style={{ color: "#6366F1" }}
-                            />
-                            <span
-                              className="text-sm font-semibold"
-                              style={{ color: "#111827" }}
-                            >
-                              Video Generated
-                            </span>
-                            <Badge
-                              className="text-[10px] px-2 py-0.5"
-                              style={{
-                                backgroundColor: "#EEF2FF",
-                                color: "#6366F1",
-                                border: "none",
-                              }}
-                            >
-                              {vid.duration}s
-                            </Badge>
-                            <Badge
-                              className="text-[10px] px-2 py-0.5"
-                              style={{
-                                backgroundColor: "#F3F4F6",
-                                color: "#6B7280",
-                                border: "none",
-                              }}
-                            >
-                              {vid.resolution}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => startVideoRefine(vid.id)}
-                              className="text-xs px-3 py-1 rounded-lg transition-colors hover:bg-indigo-50"
-                              style={{
-                                color: "#6366F1",
-                                border: "1px solid #C7D2FE",
-                              }}
-                              data-ocid="design.chat.video.edit_button"
-                            >
-                              Re-generate
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleVideoDownload(vid)}
-                              className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-lg transition-colors hover:bg-gray-50"
-                              style={{
-                                color: "#6B7280",
-                                border: "1px solid #E2E8F0",
-                              }}
-                              data-ocid="design.chat.video.download.button"
-                            >
-                              <Download className="h-3 w-3" />
-                              Download
-                            </button>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <video
-                            controls
-                            src={vid.videoUrl}
-                            className="w-full rounded-lg"
-                            style={{ maxHeight: 400 }}
-                          >
-                            <track kind="captions" />
-                          </video>
-                        </div>
-                        {vid.prompt && (
-                          <div className="px-4 pb-3">
-                            <p className="text-xs" style={{ color: "#9CA3AF" }}>
-                              "{vid.prompt}"
-                            </p>
-                          </div>
-                        )}
-                      </motion.div>
-                    );
+                    // Video generation is disabled — skip rendering video cards
+                    void vid;
+                    return null;
                   })}
                 </AnimatePresence>
 
@@ -2495,13 +2366,14 @@ export default function DesignTool({
             <button
               type="button"
               onClick={handleStarSave}
-              disabled={isSavingStar || !starName.trim()}
+              disabled={isSavingStar || !starName.trim() || !actor}
               className="px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5"
               style={{ backgroundColor: "#6F9D79", color: "#fff" }}
               data-ocid="design.star.confirm_button"
+              title={!actor ? "Connecting to backend…" : undefined}
             >
               {isSavingStar && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              Save to History
+              {!actor ? "Connecting…" : "Save to History"}
             </button>
           </DialogFooter>
         </DialogContent>

@@ -136,7 +136,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-  'claimDodoPayment' : IDL.Func([IDL.Text, SubscriptionPlan], [], []),
+  'claimDodoPayment' : IDL.Func([IDL.Text, SubscriptionPlan], [IDL.Text], []),
   'createCheckoutSession' : IDL.Func(
       [SubscriptionPlan, IDL.Text, IDL.Text],
       [IDL.Text],
@@ -178,6 +178,7 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'handleDodoWebhook' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'logAiGeneration' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'recordPhotoUsage' : IDL.Func([], [], []),
@@ -322,7 +323,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-    'claimDodoPayment' : IDL.Func([IDL.Text, SubscriptionPlan], [], []),
+    'claimDodoPayment' : IDL.Func([IDL.Text, SubscriptionPlan], [IDL.Text], []),
     'createCheckoutSession' : IDL.Func(
         [SubscriptionPlan, IDL.Text, IDL.Text],
         [IDL.Text],
@@ -364,6 +365,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'handleDodoWebhook' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'logAiGeneration' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'recordPhotoUsage' : IDL.Func([], [], []),

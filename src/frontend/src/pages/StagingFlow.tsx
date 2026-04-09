@@ -171,7 +171,13 @@ export default function StagingFlow({
   navigate,
   actor,
   onHistory,
-}: { navigate: (p: Page) => void; actor?: any; onHistory?: () => void }) {
+  isAdmin = false,
+}: {
+  navigate: (p: Page) => void;
+  actor?: any;
+  onHistory?: () => void;
+  isAdmin?: boolean;
+}) {
   const [step, setStep] = useState<Step>(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -192,8 +198,10 @@ export default function StagingFlow({
   const [starDescription, setStarDescription] = useState("");
   const [isSavingStar, setIsSavingStar] = useState(false);
 
-  const freeRemaining = FREE_IMAGE_LIMIT - getUsedFreeImages();
-  const isFree = hasFreeImages();
+  const freeRemaining = isAdmin
+    ? 999999
+    : FREE_IMAGE_LIMIT - getUsedFreeImages();
+  const isFree = isAdmin ? true : hasFreeImages();
 
   const setProgress = useCallback((pct: number, label: string) => {
     setGenerationProgress(pct);
@@ -342,8 +350,8 @@ export default function StagingFlow({
     if (!selectedPlan) return;
     const plan = PLANS.find((p) => p.name === selectedPlan)!;
 
-    if (hasFreeImages()) {
-      incrementFreeImages();
+    if (isAdmin || hasFreeImages()) {
+      if (!isAdmin) incrementFreeImages();
       const orderId = `sp_${Date.now()}`;
       currentOrderId.current = orderId;
       saveOrder({
@@ -414,7 +422,9 @@ export default function StagingFlow({
       return;
     }
     if (!actor) {
-      toast.error("Not connected to backend");
+      toast.error(
+        "Still connecting to backend — please wait a moment and try again",
+      );
       return;
     }
     setIsSavingStar(true);
@@ -692,11 +702,20 @@ export default function StagingFlow({
                     <div className="flex items-start gap-3 bg-primary/10 border border-primary/30 text-foreground rounded-xl px-4 py-3 mb-5 text-sm">
                       <CheckCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                       <span>
-                        <strong>Free staging!</strong> You have{" "}
-                        <strong>
-                          {freeRemaining} of {FREE_IMAGE_LIMIT}
-                        </strong>{" "}
-                        free stagings remaining. No payment needed.
+                        {isAdmin ? (
+                          <>
+                            <strong>Admin account</strong> — unlimited free
+                            stagings. No payment needed.
+                          </>
+                        ) : (
+                          <>
+                            <strong>Free staging!</strong> You have{" "}
+                            <strong>
+                              {freeRemaining} of {FREE_IMAGE_LIMIT}
+                            </strong>{" "}
+                            free stagings remaining. No payment needed.
+                          </>
+                        )}
                       </span>
                     </div>
                   )}
@@ -957,13 +976,14 @@ export default function StagingFlow({
             </Button>
             <Button
               onClick={handleStarSave}
-              disabled={isSavingStar || !starName.trim()}
+              disabled={isSavingStar || !starName.trim() || !actor}
               data-ocid="staging.star.confirm_button"
+              title={!actor ? "Connecting to backend…" : undefined}
             >
               {isSavingStar && (
                 <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
               )}
-              Save to History
+              {!actor ? "Connecting…" : "Save to History"}
             </Button>
           </DialogFooter>
         </DialogContent>

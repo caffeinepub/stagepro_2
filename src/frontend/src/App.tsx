@@ -2,9 +2,12 @@ import { Toaster } from "@/components/ui/sonner";
 import { useActor } from "@caffeineai/core-infrastructure";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import {
+  AlertCircle,
   ArrowRight,
   CheckCircle,
   ChevronRight,
+  Loader2,
+  RefreshCw,
   Sparkles,
   Star,
 } from "lucide-react";
@@ -29,6 +32,8 @@ export type AppView =
   | "admin-logs"
   | "terms";
 export type Page = "landing" | "staging" | "dashboard";
+
+type PaymentVerifyState = "idle" | "verifying" | "success" | "failed";
 
 const REVIEWS = [
   {
@@ -100,6 +105,156 @@ const TRANSFORMATIONS = [
   },
 ];
 
+// ----- Payment Verification Overlay -----
+interface PaymentVerificationOverlayProps {
+  state: PaymentVerifyState;
+  planName: string;
+  onRetry: () => void;
+  onDismiss: () => void;
+}
+
+function PaymentVerificationOverlay({
+  state,
+  planName,
+  onRetry,
+  onDismiss,
+}: PaymentVerificationOverlayProps) {
+  if (state === "idle") return null;
+
+  const displayPlan = planName.charAt(0).toUpperCase() + planName.slice(1);
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center"
+      style={{
+        backgroundColor: "rgba(0,0,0,0.6)",
+        backdropFilter: "blur(4px)",
+      }}
+      data-ocid="payment.verification.overlay"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="rounded-2xl p-8 max-w-sm w-full mx-4 flex flex-col items-center text-center gap-5"
+        style={{ backgroundColor: "#FFFFFF" }}
+      >
+        {state === "verifying" && (
+          <>
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: "#E6F7F6" }}
+            >
+              <Loader2
+                className="w-8 h-8 animate-spin"
+                style={{ color: "#4ECDC4" }}
+              />
+            </div>
+            <div>
+              <h2
+                className="text-xl font-bold mb-2"
+                style={{ color: "#111827" }}
+              >
+                Verifying Payment
+              </h2>
+              <p className="text-sm" style={{ color: "#6B7280" }}>
+                Confirming your <strong>{displayPlan}</strong> plan payment.
+                This takes just a moment…
+              </p>
+            </div>
+          </>
+        )}
+
+        {state === "success" && (
+          <>
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: "#D1FAE5" }}
+            >
+              <CheckCircle className="w-9 h-9" style={{ color: "#10B981" }} />
+            </div>
+            <div>
+              <h2
+                className="text-xl font-bold mb-2"
+                style={{ color: "#111827" }}
+              >
+                Plan Activated! 🎉
+              </h2>
+              <p className="text-sm" style={{ color: "#6B7280" }}>
+                Your <strong>{displayPlan}</strong> plan is now active. Enjoy
+                your transformations!
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onDismiss}
+              data-ocid="payment.success.dismiss_button"
+              className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+              style={{
+                background: "linear-gradient(135deg, #4ECDC4, #2D9B94)",
+              }}
+            >
+              Start Designing
+            </button>
+          </>
+        )}
+
+        {state === "failed" && (
+          <>
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: "#FEE2E2" }}
+            >
+              <AlertCircle className="w-9 h-9" style={{ color: "#EF4444" }} />
+            </div>
+            <div>
+              <h2
+                className="text-xl font-bold mb-2"
+                style={{ color: "#111827" }}
+              >
+                Verification Failed
+              </h2>
+              <p className="text-sm" style={{ color: "#6B7280" }}>
+                We couldn't verify your payment for the{" "}
+                <strong>{displayPlan}</strong> plan. Please try again or contact
+                support.
+              </p>
+              <a
+                href="mailto:coilandvirtualstaging@outlook.com"
+                className="text-xs underline block mt-2"
+                style={{ color: "#6B7280" }}
+              >
+                coilandvirtualstaging@outlook.com
+              </a>
+            </div>
+            <div className="flex gap-3 w-full">
+              <button
+                type="button"
+                onClick={onDismiss}
+                data-ocid="payment.failed.dismiss_button"
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                style={{ border: "1px solid #E2E8F0", color: "#6B7280" }}
+              >
+                Dismiss
+              </button>
+              <button
+                type="button"
+                onClick={onRetry}
+                data-ocid="payment.failed.retry_button"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ backgroundColor: "#4ECDC4" }}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Retry
+              </button>
+            </div>
+          </>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
+// ----- Pre-login page -----
 function PreLoginPage({
   onLogin,
   isInitializing,
@@ -466,11 +621,15 @@ export default function App() {
   const [view, setView] = useState<AppView>("landing");
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [principalCopied, setPrincipalCopied] = useState(false);
+  const [paymentVerifyState, setPaymentVerifyState] =
+    useState<PaymentVerifyState>("idle");
+  const [pendingPlan, setPendingPlan] = useState<string>("");
+
   const { identity, login, clear, isInitializing } = useInternetIdentity();
   const isAuthenticated = !!identity && !identity.getPrincipal().isAnonymous();
   const { actor } = useActor(createActor);
 
-  // Register user and then check admin status
+  // Register user and check admin status
   useEffect(() => {
     if (!isAuthenticated || !actor) return;
     (actor as any)
@@ -485,16 +644,22 @@ export default function App() {
       .catch(() => setIsAdmin(false));
   }, [isAuthenticated, actor]);
 
-  // Handle Dodo Payments redirect callback
+  // Handle Dodo Payments redirect callback — parse URL params on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const payment = params.get("payment");
 
     if (payment === "success") {
+      // Support both ?plan=xxx and ?payment_id=xxx&plan=xxx formats
       const plan = params.get("plan") || "";
+      const paymentId = params.get("payment_id") || "";
       window.history.replaceState({}, "", window.location.pathname);
+
       if (plan) {
-        sessionStorage.setItem("pendingDodoPayment", JSON.stringify({ plan }));
+        sessionStorage.setItem(
+          "pendingDodoPayment",
+          JSON.stringify({ plan, paymentId }),
+        );
       }
       setView("design");
     } else if (payment === "cancelled") {
@@ -503,36 +668,72 @@ export default function App() {
     }
   }, []);
 
-  // Activate plan once authenticated after Dodo payment redirect
+  // Claim Dodo payment once authenticated
   useEffect(() => {
     if (!isAuthenticated || !actor) return;
-    const pending = sessionStorage.getItem("pendingDodoPayment");
-    if (!pending) return;
+    const raw = sessionStorage.getItem("pendingDodoPayment");
+    if (!raw) return;
     sessionStorage.removeItem("pendingDodoPayment");
 
-    const { plan } = JSON.parse(pending) as { plan: string };
-    const planMap: Record<string, string> = {
-      starter: "starter",
-      basic: "basic",
-      growth: "growth",
-      pro: "pro",
-      max: "max",
-    };
-    const planVariant = planMap[plan];
+    const { plan } = JSON.parse(raw) as { plan: string; paymentId: string };
+    const validPlans = ["starter", "basic", "growth", "pro", "max"];
+    const planVariant = validPlans.includes(plan) ? plan : null;
     if (!planVariant) return;
+
+    setPendingPlan(plan);
+    setPaymentVerifyState("verifying");
 
     (actor as any)
       .claimDodoPayment(plan, { [planVariant]: null })
       .then(() => {
-        toast.success(
-          `🎉 ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activated! Enjoy your subscription.`,
-        );
+        setPaymentVerifyState("success");
       })
       .catch((err: unknown) => {
         console.error("Failed to activate plan:", err);
-        // Try setUserPlan as fallback (admin only)
+        setPaymentVerifyState("failed");
+        sessionStorage.setItem(
+          "pendingDodoPayment",
+          JSON.stringify({ plan, paymentId: "" }),
+        );
       });
   }, [isAuthenticated, actor]);
+
+  const handleVerifyDismiss = () => {
+    if (paymentVerifyState === "success") {
+      toast.success(
+        `🎉 ${pendingPlan.charAt(0).toUpperCase() + pendingPlan.slice(1)} plan activated! Enjoy your subscription.`,
+      );
+    }
+    setPaymentVerifyState("idle");
+    setPendingPlan("");
+  };
+
+  const handleVerifyRetry = () => {
+    if (!pendingPlan) return;
+    setPaymentVerifyState("idle");
+    sessionStorage.setItem(
+      "pendingDodoPayment",
+      JSON.stringify({ plan: pendingPlan, paymentId: "" }),
+    );
+    // Directly re-run the claim logic
+    if (!isAuthenticated || !actor) return;
+    const validPlans = ["starter", "basic", "growth", "pro", "max"];
+    const planVariant = validPlans.includes(pendingPlan) ? pendingPlan : null;
+    if (!planVariant) return;
+    sessionStorage.removeItem("pendingDodoPayment");
+    setPaymentVerifyState("verifying");
+    (actor as any)
+      .claimDodoPayment(pendingPlan, { [planVariant]: null })
+      .then(() => setPaymentVerifyState("success"))
+      .catch((err: unknown) => {
+        console.error("Retry failed:", err);
+        setPaymentVerifyState("failed");
+        sessionStorage.setItem(
+          "pendingDodoPayment",
+          JSON.stringify({ plan: pendingPlan, paymentId: "" }),
+        );
+      });
+  };
 
   // Block all access until authenticated
   if (!isAuthenticated) {
@@ -550,7 +751,15 @@ export default function App() {
 
   return (
     <>
-      {/* Admin badge overlay — clickable to open Admin Logs */}
+      {/* Payment verification overlay */}
+      <PaymentVerificationOverlay
+        state={paymentVerifyState}
+        planName={pendingPlan}
+        onRetry={handleVerifyRetry}
+        onDismiss={handleVerifyDismiss}
+      />
+
+      {/* Admin badge overlay */}
       {isAdmin && (
         <button
           type="button"
@@ -563,7 +772,7 @@ export default function App() {
         </button>
       )}
 
-      {/* Principal ID display — always visible when logged in, to help find your principal */}
+      {/* Principal ID display */}
       {isAuthenticated && identity && (
         <button
           type="button"
@@ -610,6 +819,7 @@ export default function App() {
           onLogout={clear}
           onHistory={() => setView("history")}
           actor={actor}
+          isAdmin={isAdmin}
         />
       )}
       {view === "pricing" && (
@@ -630,6 +840,7 @@ export default function App() {
           }}
           actor={actor}
           onHistory={() => setView("history")}
+          isAdmin={isAdmin}
         />
       )}
       {view === "history" && (

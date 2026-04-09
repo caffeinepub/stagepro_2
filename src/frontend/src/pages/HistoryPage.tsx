@@ -43,6 +43,7 @@ function formatDate(nanoseconds: bigint): string {
 export default function HistoryPage({ onBack, actor }: HistoryPageProps) {
   const [entries, setEntries] = useState<StarredEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(!actor);
   const [editEntry, setEditEntry] = useState<StarredEntry | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -52,9 +53,12 @@ export default function HistoryPage({ onBack, actor }: HistoryPageProps) {
 
   useEffect(() => {
     if (!actor) {
-      setLoading(false);
+      // Keep connecting state until actor is ready
+      setConnecting(true);
+      setLoading(true);
       return;
     }
+    setConnecting(false);
     setLoading(true);
     (actor as any)
       .getMyStarredEntries()
@@ -163,8 +167,37 @@ export default function HistoryPage({ onBack, actor }: HistoryPageProps) {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {/* Connecting to backend state */}
+        {connecting && (
+          <div
+            className="flex flex-col items-center justify-center py-20 gap-4"
+            data-ocid="history.connecting_state"
+          >
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center"
+              style={{ backgroundColor: "#EEE7DA" }}
+            >
+              <Loader2
+                className="w-8 h-8 animate-spin"
+                style={{ color: "#6F9D79" }}
+              />
+            </div>
+            <div className="text-center">
+              <h2
+                className="text-lg font-bold mb-1"
+                style={{ color: "#1A1A1A" }}
+              >
+                Connecting to backend…
+              </h2>
+              <p className="text-sm" style={{ color: "#7A7A7A" }}>
+                Loading your starred history. This only takes a moment.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Loading skeleton */}
-        {loading && (
+        {!connecting && loading && (
           <div
             className="grid gap-5"
             style={{
@@ -193,7 +226,7 @@ export default function HistoryPage({ onBack, actor }: HistoryPageProps) {
         )}
 
         {/* Empty state */}
-        {!loading && entries.length === 0 && (
+        {!connecting && !loading && entries.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -233,7 +266,7 @@ export default function HistoryPage({ onBack, actor }: HistoryPageProps) {
         )}
 
         {/* Entries grid */}
-        {!loading && entries.length > 0 && (
+        {!connecting && !loading && entries.length > 0 && (
           <div
             className="grid gap-5"
             style={{
